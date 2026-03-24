@@ -30,6 +30,37 @@
 
 # Installation
 
+## Docker (Recommended)
+
+A Docker setup is provided for reproducible training with Isaac Gym Preview 4, CUDA 11.8, and Ubuntu 20.04.
+
+**Prerequisites:**
+- [Docker](https://docs.docker.com/engine/install/ubuntu/) with [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+- [IsaacGym Preview 4](https://developer.nvidia.com/isaac-gym/download) extracted in the repo root as `isaacgym/`
+
+**Build the image:**
+```bash
+docker compose build
+```
+
+**Start the container (detached):**
+```bash
+docker compose up -d falcon
+```
+Attach via VS Code (Dev Containers / Docker extension) or `docker exec -it falcon-train bash`.
+
+**Start the container (interactive):**
+```bash
+docker compose run --rm falcon bash
+```
+
+**Stop the container:**
+```bash
+docker compose down
+```
+
+**W&B logging:** set `WANDB_API_KEY` and `WANDB_MODE=online` in your shell before starting the container.
+
 ## IsaacGym Conda Env
 
 Create mamba/conda environment, in the following we use conda for example, but you can use mamba as well.

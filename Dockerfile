@@ -1,6 +1,6 @@
 # ============================================================
 # FALCON - Isaac Gym Preview 4 Training Container
-# Base: CUDA 11.8 devel on Ubuntu 20.04
+# Base: CUDA 11.8 devel on Ubuntu 20.04 + Miniconda
 # ============================================================
 FROM nvidia/cuda:11.8.0-devel-ubuntu20.04
 
@@ -8,10 +8,17 @@ FROM nvidia/cuda:11.8.0-devel-ubuntu20.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 
+# ---- Non-root user (created early so installs are owned by devuser) ----
+ARG HOST_UID=1000
+ARG HOST_GID=1000
+RUN apt-get update && apt-get install -y --no-install-recommends sudo && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd -g ${HOST_GID} devuser && \
+    useradd -m -s /bin/bash -u ${HOST_UID} -g ${HOST_GID} -G sudo devuser && \
+    echo "devuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
 # ---- System dependencies ----
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Python build
-    python3.8 python3.8-dev python3.8-venv python3-pip \
     # Rendering (EGL/Vulkan for headless, X11/GLX for GUI)
     libvulkan1 vulkan-utils libgl1-mesa-glx libgl1-mesa-dev libgles2-mesa \
     libegl1-mesa libegl1-mesa-dev \
@@ -24,12 +31,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libusb-1.0-0 libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Make python3.8 the default
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1 && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1 && \
-    python -m pip install --upgrade pip setuptools wheel
+# ---- Install Miniconda + create fcgym env (single layer to reduce export size) ----
+USER devuser
+ENV CONDA_DIR=/home/devuser/conda
+RUN wget -qO /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    bash /tmp/miniconda.sh -b -p ${CONDA_DIR} && \
+    rm /tmp/miniconda.sh && \
+    ${CONDA_DIR}/bin/conda create -n fcgym python=3.8 -y --override-channels -c conda-forge && \
+    ${CONDA_DIR}/bin/conda clean -afy
+ENV PATH=${CONDA_DIR}/bin:${PATH}
+
+# Make all subsequent RUN commands use the fcgym environment
+SHELL ["conda", "run", "-n", "fcgym", "/bin/bash", "-c"]
 
 # ---- Vulkan ICD configuration for GPU rendering ----
+USER root
 RUN mkdir -p /usr/share/vulkan/icd.d
 COPY docker/nvidia_icd.json /usr/share/vulkan/icd.d/nvidia_icd.json
 
@@ -41,28 +57,24 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # ---- Working directory ----
+RUN mkdir -p /workspace && chown devuser:devuser /workspace
 WORKDIR /workspace
+USER devuser
 
 # ---- Install PyTorch (matching Isaac Gym Preview 4) ----
 RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 \
     --extra-index-url https://download.pytorch.org/whl/cu117
 
-# ---- Install FALCON Python dependencies ----
-# Copy only dependency-defining files first for Docker layer caching
-COPY setup.py /workspace/setup.py
-COPY isaac_utils/setup.py /workspace/isaac_utils/setup.py
-
-# Create minimal package structure so pip install -e works
-RUN mkdir -p /workspace/humanoidverse /workspace/isaac_utils/isaac_utils && \
-    touch /workspace/humanoidverse/__init__.py && \
-    touch /workspace/isaac_utils/isaac_utils/__init__.py
-
-RUN pip install -e /workspace && \
-    pip install -e /workspace/isaac_utils
+# ---- Shell init ----
+RUN conda init bash
 
 # ---- Entrypoint script ----
+USER root
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+SHELL ["/bin/bash", "-c"]
+USER devuser
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash"]

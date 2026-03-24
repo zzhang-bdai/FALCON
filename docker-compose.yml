@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
     image: falcon:latest
     container_name: falcon-train
     runtime: nvidia
@@ -15,8 +18,6 @@ services:
     volumes:
       # FALCON source code (live mount for development)
       - .:/workspace:rw
-      # Isaac Gym (user must download separately)
-      - ../isaacgym:/workspace/isaacgym:ro
       # X11 socket for GUI rendering
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       # Persistent output directories
@@ -35,7 +36,6 @@ services:
     ipc: host
     ulimits:
       memlock: -1
-      stack: 67108864
     stdin_open: true
     tty: true
     working_dir: /workspace

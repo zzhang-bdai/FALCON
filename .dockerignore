@@ -46,7 +46,7 @@ Dockerfile
 docker-compose.yml
 docker/README.md
 
-# Isaac Gym (mounted separately)
+# Isaac Gym (mounted separately via volume)
 isaacgym
 
 # External SDKs
