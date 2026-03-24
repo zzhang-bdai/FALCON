@@ -1,0 +1,12 @@
+# Blender MTL File: 'left_wrist_cast.blend'
+# Material Count: 1
+
+newmtl g1_silver.005
+Ns 349.321744
+Ka 0.702069 0.702069 0.702069
+Kd 0.438800 0.434087 0.448238
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 3
