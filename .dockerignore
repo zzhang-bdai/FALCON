@@ -1,0 +1,54 @@
+# Version control
+.git
+.gitignore
+
+# Python artifacts
+__pycache__
+*.py[cod]
+*.egg-info
+*.eggs
+dist
+build
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Logs and outputs (mounted as volumes)
+logs
+logs_eval
+runs
+outputs
+results
+wandb
+hydra_logs
+debug_logs
+
+# Large/binary files
+*.mp4
+*.avi
+*.mov
+*.zip
+*.tar.gz
+*.pt
+*.pkl
+*.onnx
+*.npz
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker itself (but keep docker/ dir for COPY)
+Dockerfile
+docker-compose.yml
+docker/README.md
+
+# Isaac Gym (mounted separately)
+isaacgym
+
+# External SDKs
+booster_robotics_sdk
+unitree_sdk2_python
