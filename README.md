@@ -151,6 +151,7 @@ python humanoidverse/train_agent.py \
 +robot=g1/g1_29dof_waist_halohand \
 +terrain=terrain_locomotion_plane \
 +obs=dec_loco/g1_29dof_obs_diff_force_history_wolinvel_ma \
++opt=wandb \
 num_envs=4096 \
 project_name=g1_29dof_falcon \
 experiment_name=g1_29dof_falcon_test \
