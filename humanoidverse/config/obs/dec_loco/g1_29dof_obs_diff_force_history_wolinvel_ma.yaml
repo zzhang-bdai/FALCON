@@ -42,7 +42,7 @@ obs:
     ]
   
   history_length:
-    actor_obs: 5
+    actor_obs: 1
     critic_obs: 1
 
   obs_scales: {
