@@ -1,8 +1,8 @@
 # ============================================================
 # FALCON - Isaac Gym Preview 4 Training Container
-# Base: CUDA 11.8 devel on Ubuntu 20.04 + Miniconda
+# Base: CUDA 11.8 runtime on Ubuntu 20.04 + Miniconda
 # ============================================================
-FROM nvidia/cuda:11.8.0-devel-ubuntu20.04
+FROM nvidia/cuda:11.8.0-runtime-ubuntu20.04
 
 # Prevent interactive prompts during apt install
 ENV DEBIAN_FRONTEND=noninteractive
@@ -14,7 +14,7 @@ ARG HOST_GID=1000
 RUN apt-get update && apt-get install -y --no-install-recommends sudo && \
     rm -rf /var/lib/apt/lists/* && \
     groupadd -g ${HOST_GID} devuser && \
-    useradd -m -s /bin/bash -u ${HOST_UID} -g ${HOST_GID} -G sudo devuser && \
+    useradd -m -s /bin/bash -u ${HOST_UID} -g ${HOST_GID} -G sudo devuser --no-log-init && \
     echo "devuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # ---- System dependencies ----
