@@ -62,14 +62,15 @@ def main(config: OmegaConf):
     os.chdir(hydra.utils.get_original_cwd())
 
     if config.use_wandb:
-        project_name = f"{config.project_name}"
+        project_name = config.wandb.wandb_project if config.wandb.wandb_project else config.project_name
         run_name = f"{config.timestamp}_{config.experiment_name}_{config.log_task_name}_{config.robot.asset.robot_type}"
         wandb_dir = Path(config.wandb.wandb_dir)
         wandb_dir.mkdir(exist_ok=True, parents=True)
         logger.info(f"Saving wandb logs to {wandb_dir}")
-        wandb.init(project=project_name, 
+        wandb.init(project=project_name,
                 entity=config.wandb.wandb_entity,
                 name=run_name,
+                mode=config.wandb.wandb_mode,
                 sync_tensorboard=True,
                 config=unresolved_conf,
                 dir=wandb_dir)

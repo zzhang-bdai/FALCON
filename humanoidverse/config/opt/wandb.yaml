@@ -3,9 +3,9 @@
 use_wandb: True
 
 wandb:
-  wandb_project: null
-  wandb_tags: 'online' # 'online' or 'offline' or 'disabled'
+  wandb_project: FALCON
+  wandb_mode: 'online' # 'online' or 'offline' or 'disabled'
   wandb_group: null
   wandb_id: null
-  wandb_entity: hang0610 # 'hang0610'
+  wandb_entity: RAI-BD
   wandb_dir: ${experiment_dir}/.wandb
