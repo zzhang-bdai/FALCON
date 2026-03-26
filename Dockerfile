@@ -31,13 +31,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libusb-1.0-0 libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# ---- Install Miniconda + create fcgym env (single layer to reduce export size) ----
+# ---- Install Miniforge + create fcgym & fcreal envs (single layer to reduce export size) ----
 USER devuser
 ENV CONDA_DIR=/home/devuser/conda
-RUN wget -qO /tmp/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-    bash /tmp/miniconda.sh -b -p ${CONDA_DIR} && \
-    rm /tmp/miniconda.sh && \
-    ${CONDA_DIR}/bin/conda create -n fcgym python=3.8 -y --override-channels -c conda-forge && \
+RUN wget -qO /tmp/miniforge.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh && \
+    bash /tmp/miniforge.sh -b -p ${CONDA_DIR} && \
+    rm /tmp/miniforge.sh && \
+    ${CONDA_DIR}/bin/conda create -n fcgym python=3.8 -y && \
+    ${CONDA_DIR}/bin/conda create -n fcreal python=3.10 -y && \
     ${CONDA_DIR}/bin/conda clean -afy
 ENV PATH=${CONDA_DIR}/bin:${PATH}
 
@@ -65,15 +66,35 @@ USER devuser
 RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 \
     --extra-index-url https://download.pytorch.org/whl/cu117
 
+# ---- Install FALCON and isaac_utils in fcgym (caches dependencies) ----
+COPY --chown=devuser:devuser setup.py /workspace/setup.py
+COPY --chown=devuser:devuser isaac_utils/setup.py /workspace/isaac_utils/setup.py
+RUN mkdir -p /workspace/isaac_utils/isaac_utils && \
+    touch /workspace/isaac_utils/isaac_utils/__init__.py && \
+    pip install -e /workspace -e /workspace/isaac_utils
+
 # ---- Shell init ----
 RUN conda init bash
 
+# ---- Install fcreal environment packages ----
+SHELL ["conda", "run", "-n", "fcreal", "/bin/bash", "-c"]
+RUN conda install pinocchio=3.2.0 --override-channels -c conda-forge -y && \
+    conda clean -afy
+RUN git clone https://github.com/unitreerobotics/unitree_sdk2_python.git /home/devuser/unitree_sdk2_python && \
+    pip install -e /home/devuser/unitree_sdk2_python
+COPY --chown=devuser:devuser sim2real/requirements.txt /workspace/sim2real/requirements.txt
+RUN pip install -r /workspace/sim2real/requirements.txt
+
+# ---- Install Claude Code ----
+RUN curl -fsSL https://claude.ai/install.sh | bash
+RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+
 # ---- Entrypoint script ----
+SHELL ["/bin/bash", "-c"]
 USER root
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-SHELL ["/bin/bash", "-c"]
 USER devuser
 
 ENTRYPOINT ["/entrypoint.sh"]

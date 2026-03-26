@@ -13,17 +13,17 @@ fi
 eval "$(${CONDA_DIR}/bin/conda shell.bash hook)"
 conda activate fcgym
 
-# Install editable packages from volume mount (only on first run)
-STAMP="/home/devuser/.falcon_installed"
-if [ ! -f "$STAMP" ]; then
-    pip install -e /workspace -e /workspace/isaac_utils -e /workspace/isaacgym/python
+# Install isaacgym from volume mount (only on first run)
+STAMP="/home/devuser/.isaacgym_installed"
+if [ -d "/workspace/isaacgym/python" ] && [ ! -f "$STAMP" ]; then
+    pip install -e /workspace/isaacgym/python
     touch "$STAMP"
 fi
 
 # Set LD_LIBRARY_PATH for isaacgym native libs and conda libs
 if [ -d "/workspace/isaacgym/python/isaacgym/_bindings/linux-x86_64" ]; then
-    export LD_LIBRARY_PATH=/workspace/isaacgym/python/isaacgym/_bindings/linux-x86_64:${LD_LIBRARY_PATH}
+    echo 'export LD_LIBRARY_PATH=/workspace/isaacgym/python/isaacgym/_bindings/linux-x86_64:${LD_LIBRARY_PATH}' >> ~/.bashrc && source ~/.bashrc
 fi
-export LD_LIBRARY_PATH=${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}
+echo `export LD_LIBRARY_PATH=${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}` >> ~/.bashrc && source ~/.bashrc
 
 exec "$@"
