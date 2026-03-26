@@ -116,6 +116,7 @@ class BasePolicy:
     def _init_policy_components(self, model_path, policy_action_scale, rl_rate):
         """Initialize policy-related components."""
         self.setup_policy(model_path)
+        self._adjust_history_length_from_model()
         self.last_policy_action = np.zeros((1, self.num_dofs))
         self.scaled_policy_action = np.zeros((1, self.num_dofs))
         self.policy_action_scale = policy_action_scale
@@ -230,7 +231,27 @@ class BasePolicy:
             return outputs[0]  # just return outputs[0] as only "action" is needed
 
         self.policy = policy_act
-    
+
+    def _adjust_history_length_from_model(self):
+        """Adjust observation history length based on ONNX model input dimensions."""
+        for inp in self.onnx_policy_session.get_inputs():
+            if inp.name in self.obs_dim_dict:
+                expected_dim = inp.shape[1]
+                obs_dim_per_step = self.obs_dim_dict[inp.name]
+                if obs_dim_per_step > 0 and expected_dim % obs_dim_per_step == 0:
+                    model_history_len = expected_dim // obs_dim_per_step
+                    if model_history_len != self.history_length_dict[inp.name]:
+                        from loguru import logger
+                        logger.info(
+                            f"Adjusting history length for '{inp.name}' from "
+                            f"{self.history_length_dict[inp.name]} to {model_history_len} "
+                            f"(model expects {expected_dim}, obs_dim={obs_dim_per_step})"
+                        )
+                        self.history_length_dict[inp.name] = model_history_len
+                        self.obs_buf_dict[inp.name] = np.zeros(
+                            (1, obs_dim_per_step * model_history_len)
+                        )
+
     def _calculate_obs_dim_dict(self):
         """Calculate observation dimensions for each observation type."""
         obs_dim_dict = {}
